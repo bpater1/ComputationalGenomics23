@@ -1,40 +1,49 @@
-def translate_rna_codon(codon, genetic_code):
-    return genetic_code[codon]
+def translate_rna_codon(codon, codon_table):
+    for amino_acid, codons in codon_table.items():
+        if codon in codons:
+            return amino_acid
+    return None
 
-def count_amino_acids(rna_sequence):
-    genetic_code = {
-        "UUU": "F", "UUC": "F", "UUA": "L", "UUG": "L",
-        "UCU": "S", "UCC": "S", "UCA": "S", "UCG": "S",
-        "UAU": "Y", "UAC": "Y", "UAA": "", "UAG": "",
-        "UGU": "C", "UGC": "C", "UGA": "", "UGG": "W",
-        "CUU": "L", "CUC": "L", "CUA": "L", "CUG": "L",
-        "CCU": "P", "CCC": "P", "CCA": "P", "CCG": "P",
-        "CAU": "H", "CAC": "H", "CAA": "Q", "CAG": "Q",
-        "CGU": "R", "CGC": "R", "CGA": "R", "CGG": "R",
-        "AUU": "I", "AUC": "I", "AUA": "I", "AUG": "M",
-        "ACU": "T", "ACC": "T", "ACA": "T", "ACG": "T",
-        "AAU": "N", "AAC": "N", "AAA": "K", "AAG": "K",
-        "AGU": "S", "AGC": "S", "AGA": "R", "AGG": "R",
-        "GUU": "V", "GUC": "V", "GUA": "V", "GUG": "V",
-        "GCU": "A", "GCC": "A", "GCA": "A", "GCG": "A",
-        "GAU": "D", "GAC": "D", "GAA": "E", "GAG": "E",
-        "GGU": "G", "GGC": "G", "GGA": "G", "GGG": "G"
-    }
+def count_amino_acids(rna_sequence, codon_table):
+    amino_acid_counts = {amino_acid: 0 for amino_acid in codon_table.keys()}
+    codon_length = 3
 
-    amino_acid_counts = {}
-    
-    for i in range(0, len(rna_sequence), 3):
-        codon = rna_sequence[i:i+3]
-        amino_acid = translate_rna_codon(codon, genetic_code)
-        
-        if amino_acid != "" and amino_acid != "M":  # Exclude start and stop codons
-            amino_acid_counts[amino_acid] = amino_acid_counts.get(amino_acid, 0) + 1
+    for i in range(0, len(rna_sequence), codon_length):
+        codon = rna_sequence[i:i + codon_length]
+        amino_acid = translate_rna_codon(codon, codon_table)
+        if amino_acid is not None:
+            amino_acid_counts[amino_acid] += 1
 
-    sorted_counts = [amino_acid_counts.get(amino_acid, 0) for amino_acid in sorted(genetic_code.values())]
-    return sorted_counts
+    return amino_acid_counts
 
 if __name__ == "__main__":
-    rna_sequence = input().strip().upper()
-    amino_acid_counts = count_amino_acids(rna_sequence)
-    
-    print(",".join(map(str, amino_acid_counts)))
+    codon_table = {
+        "A": ["GCU", "GCC", "GCA", "GCG"],
+        "C": ["UGU", "UGC"],
+        "D": ["GAU", "GAC"],
+        "E": ["GAA", "GAG"],
+        "F": ["UUU", "UUC"],
+        "G": ["GGU", "GGC", "GGA", "GGG"],
+        "H": ["CAU", "CAC"],
+        "I": ["AUU", "AUC", "AUA"],
+        "K": ["AAA", "AAG"],
+        "L": ["UUA", "UUG", "CUU", "CUC", "CUA", "CUG"],
+        "M": ["AUG"],
+        "N": ["AAU", "AAC"],
+        "P": ["CCU", "CCC", "CCA", "CCG"],
+        "Q": ["CAA", "CAG"],
+        "R": ["CGU", "CGC", "CGA", "CGG", "AGA", "AGG"],
+        "S": ["UCU", "UCC", "UCA", "UCG", "AGU", "AGC"],
+        "T": ["ACU", "ACC", "ACA", "ACG"],
+        "V": ["GUU", "GUC", "GUA", "GUG"],
+        "W": ["UGG"],
+        "Y": ["UAU", "UAC"],
+    }
+
+    rna_sequence = input().upper()
+    amino_acid_counts = count_amino_acids(rna_sequence, codon_table)
+
+    counts = [amino_acid_counts[acid] for acid in codon_table.keys()]
+    result = ",".join(map(str, counts))
+
+    print(result)
