@@ -56,17 +56,17 @@ def main():
         with open(output_file_name, 'w') as output_file:
             for name, read, _ in reads:
                 matches = exact_matching(kmer_index, read)
-                total_matches = len(matches)
                 most_common_offsets = get_most_common_offsets(matches)
 
-                if total_matches > 0:
-                    # Modify the read sequence to include 2 base pairs before the most common sequence
-                    modified_read = search_sequence + read
-
-                    output_file.write("{}\n".format(modified_read))  # Write the modified read sequence
-                    output_file.write(",".join(most_common_offsets) + "\n")  # Write most common offsets
+                if most_common_offsets:
+                    output_file.write("this:{}\n".format(search_sequence))
+                    # Write the read sequence
+                    output_file.write("{}\n".format(read))
+                    # Write the most common offsets
+                    output_file.write(",".join(map(str, most_common_offsets)) + "\n")
                     total_most_common_offsets += len(most_common_offsets)  # Update total offsets counter
-            
+
+            # Write the total number of most common offsets at the end of the file
             output_file.seek(0)
             output_file.write("{}\n".format(search_sequence))
             output_file.write("{}\n".format(total_most_common_offsets))
@@ -87,7 +87,7 @@ def get_most_common_offsets(matches):
         return []  # Return an empty list if there are no matches
 
     max_count = max(offset_counts.values())
-    most_common_offsets = [str(offset) for offset, count in offset_counts.items() if count == max_count]
+    most_common_offsets = [offset for offset, count in offset_counts.items() if count == max_count]
     return most_common_offsets
 
 if __name__ == "__main__":
