@@ -4,10 +4,6 @@ from collections import defaultdict
 def calculate_total_weight(quals):
     return sum(ord(qual) - 33 for qual in quals)
 
-def categorize_locus(reference_base, base_counts):
-    sorted_base_counts = sorted(base_counts.items())
-    return sorted_base_counts
-
 def main():
     if len(sys.argv) != 4:
         print("Usage: python hw2q5.py <reference.fasta> <reads.fastq> <output.txt>")
@@ -17,11 +13,8 @@ def main():
     reads_file = sys.argv[2]
     output_file = sys.argv[3]
 
-    reference = ""
     with open(reference_file, 'r') as ref_f:
-        for line in ref_f:
-            if not line.startswith('>'):
-                reference += line.strip()
+        reference = "".join(line.strip() for line in ref_f if not line.startswith('>'))
 
     k = 30  # Length of the reads
     kmer_index = defaultdict(list)
@@ -31,7 +24,7 @@ def main():
         kmer = reference[i:i + k]
         kmer_index[kmer].append(i)
 
-    locus_data = {}
+    locus_data = defaultdict(lambda: {'base_counts': defaultdict(int)})
 
     with open(reads_file, 'r') as reads_f:
         for line in reads_f:
@@ -45,45 +38,34 @@ def main():
                     kmer = read_seq[i:i + k]
                     if kmer in kmer_index:
                         for locus_position in kmer_index[kmer]:
-                            if locus_position not in locus_data:
-                                locus_data[locus_position] = {'reference_base': reference[locus_position], 'base_counts': defaultdict(int)}
                             for j in range(k):
-                                if reference[locus_position + j] != read_seq[i + j]:
-                                    locus_data[locus_position]['base_counts'][read_seq[i + j]] += calculate_total_weight(read_quals)
+                                locus_data[locus_position + j]['base_counts'][read_seq[i + j]] += calculate_total_weight(read_quals)
 
-    n_count = 0
-    m_count = 0
-    v_count = 0
-    all_bases = set()
+    v_loci = []
+
+    v_loci_data = []
 
     with open(output_file, 'w') as output_f:
         for locus_position, locus_info in sorted(locus_data.items()):
-            locus_reference_base = locus_info['reference_base']
-            locus_bases_and_weights = categorize_locus(locus_reference_base, locus_info['base_counts'])
+            locus_reference_base = reference[locus_position]
+            base_counts = locus_info['base_counts']
 
-            if locus_position == 0:
-                locus_label = 'N'
-                n_count += 1
-            elif all(base == locus_reference_base for base, _ in locus_bases_and_weights):
-                locus_label = 'M'
-                m_count += 1
-            else:
-                locus_label = 'V'
-                v_count += 1
+            # Skip loci with no alternative bases
+            if len(base_counts) <= 1:
+                continue
 
-            output_f.write(f"{locus_position},{locus_reference_base},")
+            base_weight_pairs = [f"{base}:{calculate_total_weight(quals)}" for base, quals in base_counts.items()]
+            locus_line = f"{locus_position},{locus_reference_base},"
+            locus_line += f"{','.join(base_weight_pairs)}\n"
+            v_loci_data.append(locus_line)
+            v_loci.append(locus_position)
 
-            # Collect all bases for sorting
-            for base, weight in locus_bases_and_weights:
-                all_bases.add(base)
+    n_count = len(reference) - len(v_loci)  # Number of N loci
+    m_count = 0  # Number of M loci
+    v_count = len(v_loci)  # Number of V loci
 
-            # Sort bases alphabetically
-            sorted_bases_and_weights = sorted(locus_bases_and_weights, key=lambda x: x[0])
-
-            output_f.write(','.join([f"{base}:{weight}" for base, weight in sorted_bases_and_weights]))
-            output_f.write('\n')
-
-    with open(output_file, 'a') as output_f:
+    with open(output_file, 'w') as output_f:
+        output_f.writelines(v_loci_data)
         output_f.write(f"{n_count},{m_count},{v_count}\n")
 
 if __name__ == "__main__":

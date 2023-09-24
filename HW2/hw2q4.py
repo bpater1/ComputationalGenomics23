@@ -24,17 +24,9 @@ def parse_fastq(fh):
 def hamming_distance(str1, str2):
     return sum(ch1 != ch2 for ch1, ch2 in zip(str1, str2))
 
-def approximate_matching(kmer_index, read, max_mismatches):
+def approximate_matching(kmer_index, read, max_mismatches, k):
     read_length = len(read)
-    partitions = []
-    k = read_length // (max_mismatches + 1)
-    extra_chars = read_length % (max_mismatches + 1)
-    i = 0
-    for _ in range(max_mismatches + 1):
-        partition_length = k + 1 if extra_chars > 0 else k
-        partitions.append(read[i:i + partition_length])
-        i += partition_length
-        extra_chars -= 1
+    partitions = [read[i:i + k] for i in range(0, read_length, k)]
     
     partition_counts = [0] * (max_mismatches + 1)
     partition_offsets = [[] for _ in range(max_mismatches + 1)]
@@ -52,9 +44,15 @@ def approximate_matching(kmer_index, read, max_mismatches):
     for i in range(max_mismatches + 1):
         result.append(partition_counts[i])
         if i == 0:
-            result.append('0:')
+            if partition_offsets[i]:
+                result.append(':'.join(map(str, sorted(set(partition_offsets[i])))))
+            else:
+                result.append('')
         else:
-            result.append(f"{i}:{','.join(map(str, sorted(set(partition_offsets[i]))))}")
+            if partition_offsets[i]:
+                result.append(f"{i}:{','.join(map(str, sorted(set(partition_offsets[i]))))}")
+            else:
+                result.append('')
 
     return ' '.join(map(str, result))
 
@@ -71,7 +69,7 @@ def main():
         with open(fasta_file_name, 'r') as fasta_file:
             genome_sequence = "".join(line.strip() for line in fasta_file if not line.startswith('>'))
 
-        k = 6
+        k = 6  # k-mer length, adjust as needed
         max_mismatches = 4
         kmer_index = build_kmer_index(genome_sequence, k)
 
@@ -80,7 +78,7 @@ def main():
 
         with open(output_file_name, 'w') as output_file:
             for _, read, _ in reads:
-                result = approximate_matching(kmer_index, read, max_mismatches)
+                result = approximate_matching(kmer_index, read, max_mismatches, k)
                 output_file.write(result + '\n')
 
     except FileNotFoundError as e:
