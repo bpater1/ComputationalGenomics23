@@ -62,8 +62,7 @@ def main():
                 most_common_offsets = get_most_common_offsets(matches)
 
                 if most_common_offsets:
-                    # Write the read sequence
-                    output_file.write("{}\n".format(read))
+                    output_file.write("A{}\n".format(read))
                     # Write the most common offsets
                     output_file.write("{}\n".format(",".join(map(str, most_common_offsets))))
                     total_most_common_offsets += len(most_common_offsets)  # Update total offsets counter
