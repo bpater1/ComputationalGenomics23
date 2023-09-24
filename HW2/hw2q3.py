@@ -55,20 +55,21 @@ def main():
 
         with open(output_file_name, 'w') as output_file:
             for name, read, _ in reads:
-                matches = exact_matching(kmer_index, read)
-                most_common_offsets = get_most_common_offsets(matches)
+                if search_sequence in read:
+                    matches = exact_matching(kmer_index, read)
+                    most_common_offsets = get_most_common_offsets(matches)
 
-                if most_common_offsets:
-                    output_file.write("{}\n".format(read))
-                    # Write the most common offsets
-                    output_file.write("{}\n".format(",".join(map(str, most_common_offsets))))
-                    total_most_common_offsets += len(most_common_offsets)  # Update total offsets counter
+                    if most_common_offsets:
+                        output_file.write("{}\n".format(read))
+                        # Write the most common offsets
+                        output_file.write("{}\n".format(",".join(map(str, most_common_offsets))))
+                        total_most_common_offsets += len(most_common_offsets)  # Update total offsets counter
+
         with open(output_file_name, 'r') as file:
             existing_content = file.readlines()
         
         with open(output_file_name, 'w') as output_file:
             # Insert the total number of most common offsets after processing all reads
-            output_file.seek(0)
             output_file.write("{}\n{}\n".format(search_sequence, total_most_common_offsets))
 
             # Step 5: Write the previously read content back to the file
