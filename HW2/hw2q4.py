@@ -49,14 +49,17 @@ def approximate_matching(kmer_index, read, max_mismatches, k):
         for i in range(max_mismatches + 1):
             if i == 0:
                 result.append(str(partition_counts[i]))
-            else:
-                if not partition_offsets[i]:
-                    result.append(str(i) + ":")
-                else:
-                    result.append(str(i) + ":" + ','.join(map(str, sorted(set(partition_offsets[i])))))
+            # else:
+                # this is printing the index but I also want the offsets of the given index
+                # if not partition_offsets[i]:
+                #     # result.append(str(i) + ":")
+                # else:
+                #     result.append(str(i) + ":" + ','.join(map(str, sorted(set(partition_offsets[i])))))
+                #     print(partition_offsets[i], i)
         
         # Append the result for the current partition to the results list
-        results.append(' '.join(result))
+                results.append(' '.join(result))
+        # print("result ", result)
 
     return ' '.join(results)
 
