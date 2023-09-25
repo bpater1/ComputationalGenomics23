@@ -28,33 +28,37 @@ def approximate_matching(kmer_index, read, max_mismatches, k):
     read_length = len(read)
     partitions = [read[i:i + k] for i in range(0, read_length, k)]
     
-    partition_counts = [0] * (max_mismatches + 1)
-    partition_offsets = [[] for _ in range(max_mismatches + 1)]
+    results = []
     
     for partition in partitions:
-        hits = kmer_index.get(partition, [])
-        for hit in hits:
-            mismatches = hamming_distance(partition, read[hit:hit + len(partition)])
-            if mismatches <= max_mismatches:
-                partition_counts[mismatches] += 1
-                if mismatches == 0:
-                    partition_offsets[mismatches].append(hit)
-    
-    result = []
-    for i in range(max_mismatches + 1):
-        result.append(partition_counts[i])
-        if i == 0:
-            if partition_offsets[i]:
-                result.append(':'.join(map(str, sorted(set(partition_offsets[i])))))
+        partition_counts = [0] * (max_mismatches + 1)
+        partition_offsets = [[] for _ in range(max_mismatches + 1)]
+        
+        for i in range(len(partition)):
+            kmer = partition[i:i + k]
+            hits = kmer_index.get(kmer, [])
+            for hit in hits:
+                mismatches = hamming_distance(partition, read[hit:hit + len(partition)])
+                if mismatches <= max_mismatches:
+                    partition_counts[mismatches] += 1
+                    if mismatches == 0:
+                        partition_offsets[mismatches].append(hit)
+        
+        # Create a result string for the current partition
+        result = []
+        for i in range(max_mismatches + 1):
+            if i == 0:
+                result.append(str(partition_counts[i]))
             else:
-                result.append('')
-        else:
-            if partition_offsets[i]:
-                result.append(f"{i}:{','.join(map(str, sorted(set(partition_offsets[i]))))}")
-            else:
-                result.append('')
+                if not partition_offsets[i]:
+                    result.append(str(i) + ":")
+                else:
+                    result.append(str(i) + ":" + ','.join(map(str, sorted(set(partition_offsets[i])))))
+        
+        # Append the result for the current partition to the results list
+        results.append(' '.join(result))
 
-    return ' '.join(map(str, result))
+    return ' '.join(results)
 
 def main():
     if len(sys.argv) != 4:
