@@ -3,10 +3,9 @@ import sys
 def suffix_prefix_match(str1, str2, min_overlap):
     if len(str2) < min_overlap:
         return 0
-    str2_prefix = str2[:min_overlap]
     str1_pos = -1
     while True:
-        str1_pos = str1.find(str2_prefix, str1_pos + 1)
+        str1_pos = str1.find(str2[:min_overlap], str1_pos + 1)
         if str1_pos == -1:
             return 0
         str1_suffix = str1[str1_pos:]
@@ -23,6 +22,7 @@ output_file = sys.argv[3]
 
 reads = {}
 current_read = None
+
 with open(input_fastq, 'r') as file:
     for line in file:
         if line.startswith('@'):
@@ -42,5 +42,5 @@ with open(output_file, 'w') as output:
                     max_overlap = overlap
                     best_match = match_name
 
-        if best_match:
+        if best_match and not any(suffix_prefix_match(read_seq, reads[other_read], K) == max_overlap for other_read in reads if other_read != read_name and other_read != best_match):
             output.write(f"{read_name[1:]} {max_overlap} {best_match[1:]}\n")
