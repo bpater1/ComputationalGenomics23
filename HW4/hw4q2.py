@@ -42,5 +42,15 @@ with open(output_file, 'w') as output:
                     max_overlap = overlap
                     best_match = match_name
 
-        if best_match and not any(suffix_prefix_match(read_seq, reads[other_read], K) == max_overlap for other_read in reads if other_read != read_name and other_read != best_match):
-            output.write(f"{read_name[1:]} {max_overlap} {best_match[1:]}\n")
+        if best_match:
+            # Check if there is no tie
+            tie = False
+            for other_read in reads:
+                if other_read != read_name and other_read != best_match:
+                    overlap = suffix_prefix_match(read_seq, reads[other_read], K)
+                    if overlap == max_overlap:
+                        tie = True
+                        break
+
+            if not tie:
+                output.write(f"{read_name[1:]} {max_overlap} {best_match[1:]}\n")

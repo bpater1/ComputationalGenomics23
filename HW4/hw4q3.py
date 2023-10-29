@@ -8,20 +8,27 @@ def find_unitigs(input_file, output_file):
             parts = line.strip().split()
             read_id, overlap, match_id = parts[0], int(parts[1]), parts[2]
             if match_id not in matches:
-                matches[match_id] = []
-            matches[match_id].append((read_id, overlap))
+                matches[match_id] = {'BMR': [], 'BML': []}
+            matches[match_id]['BMR'].append((read_id, overlap))
+            if read_id not in matches:
+                matches[read_id] = {'BMR': [], 'BML': []}
+            matches[read_id]['BML'].append((match_id, overlap))
 
     unitigs = []
 
     def find_unitig(start_read):
         unitig = [start_read]
         while start_read in matches:
-            matches[start_read].sort(key=lambda x: -x[1])  # Sort by descending overlap
-            next_read, overlap = matches[start_read][0]
-            unitig.append(next_read)
+            matches[start_read]['BMR'].sort(key=lambda x: -x[1])
+            next_read, overlap = matches[start_read]['BMR'][0]
             del matches[start_read]
-            start_read = next_read
+            if next_read in matches and (start_read, overlap) in matches[next_read]['BML']:
+                unitig.append(next_read)
+                start_read = next_read
+            else:
+                break
         return unitig
+
 
     # Find and build unitigs
     for start_read in list(matches.keys()):  # Create a copy of keys
