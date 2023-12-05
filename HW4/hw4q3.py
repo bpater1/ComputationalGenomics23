@@ -29,9 +29,9 @@ def find_unitigs(input_file, output_file):
                 break  # No BMR, exit the loop
             bmr_matches[start_read].sort(key=lambda x: -x[1])  # Sort by descending overlap
             next_read, overlap = bmr_matches[start_read][0]
-            unitig.append(next_read)
             bmr_matches[start_read] = bmr_matches[start_read][1:]  # Remove the used match
             if next_read in bml_matches and (start_read, overlap) in bml_matches[next_read]:
+                unitig.append(next_read)
                 start_read = next_read
             else:
                 break
@@ -50,12 +50,13 @@ def find_unitigs(input_file, output_file):
     # Write the unitigs to the output file
     with open(output_file, 'w') as out_file:
         for unitig in unitigs:
-            out_file.write(unitig[0] + '\n')
-            prev_read = unitig[0]
-            for read in unitig[1:]:
-                overlap = next(x[1] for x in bml_matches[read] if x[0] == prev_read)
-                out_file.write(f"{overlap} {read}\n")
-                prev_read = read
+            if len(unitig) > 1:
+                out_file.write(unitig[0] + '\n')
+                prev_read = unitig[0]
+                for read in unitig[1:]:
+                    overlap = next(x[1] for x in bml_matches[read] if x[0] == prev_read)
+                    out_file.write(f"{overlap} {read}\n")
+                    prev_read = read
 
 if len(sys.argv) != 3:
     print("Usage: python3 hw4q3.py input_file output_file")
